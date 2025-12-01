@@ -1,19 +1,21 @@
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { Box, CircularProgress, TextField } from "@mui/material";
+import { Box, Button, CircularProgress, TextField } from "@mui/material";
 import { getAuthSession } from "../../utils/auth";
 import { useMutation } from "@tanstack/react-query";
 import getInfo from "../../services/fetchData";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AddJob from "../actions/addJob";
 import EditJob from "../actions/editJob";
 import DeleteJob from "../actions/deleteJob";
+import { useNavigate } from "react-router-dom";
 
 const HomeComponent: React.FC = () => {
   const [localData, setLocalData] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const token = getAuthSession();
+  const token = useMemo(() => getAuthSession(), []);
   console.log("localData: ", localData);
   const mutation = useMutation({
+    mutationKey: ["fetchData"],
     mutationFn: getInfo,
     onSuccess: (response) => {
       if (response.data) {
@@ -94,10 +96,18 @@ const HomeComponent: React.FC = () => {
 
   const paginationModel = { page: 0, pageSize: 25 };
 
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    navigate("/login");
+  };
   return (
     <>
       {token && (
         <Box sx={{ mt: 4 }}>
+          <div style={{ textAlign: "right" }}>
+            <Button onClick={handleLogout}>Logout</Button>
+          </div>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <TextField
               placeholder="Search..."

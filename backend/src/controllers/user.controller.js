@@ -3,9 +3,9 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 const registerUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { email, password } = req.body;
   try {
-    if (!username || !email || !password) {
+    if (!email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
     const existingUser = await User.findOne({ email });
@@ -13,14 +13,13 @@ const registerUser = async (req, res) => {
       return res.status(409).json({ message: "User already exists" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, email, password: hashedPassword });
+    const newUser = new User({ email, password: hashedPassword });
     await newUser.save();
     console.log("User registered:", newUser);
     return res.status(201).json({
       message: "User registered succesfully",
       user: {
         id: newUser._id,
-        username: newUser.username,
         email: newUser.email,
       },
     });
@@ -43,6 +42,7 @@ const loginUser = async (req, res) => {
     res.status(201).json({ token });
   } catch (error) {
     console.log("Error while logging in ", error);
+    res.status(500).json({ message: `Internal Server Error ${error.message}` });
   }
 };
 

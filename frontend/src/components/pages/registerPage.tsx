@@ -1,50 +1,38 @@
 import { useState } from "react";
+import { FormValues, validationSchema } from "./loginPage";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import {
-  TextField,
-  Paper,
   Button,
   Grid2,
-  Typography,
   IconButton,
   InputAdornment,
+  Paper,
+  TextField,
+  Typography,
 } from "@mui/material";
+import { Field, Form, Formik } from "formik";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Formik, Form, Field } from "formik";
-import * as Yup from "yup";
-import { useMutation } from "@tanstack/react-query";
-import postLogin from "../../services/authService";
-import { setAuthSession } from "../../utils/auth";
-import { useNavigate } from "react-router-dom";
-export const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  password: Yup.string()
-    .min(6, "Invalid Password")
-    .required("Password is required"),
-});
-export interface FormValues {
-  email: string;
-  password: string;
-}
+import registerUser from "../../services/registerUser";
 
-const LoginComponent: React.FC = () => {
+const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const initialValues: FormValues = { email: "", password: "" };
   const navigate = useNavigate();
   const mutation = useMutation({
-    mutationFn: postLogin,
+    mutationFn: registerUser,
     onSuccess: (response) => {
-      if (response.data.token) {
-        setAuthSession(response.data.token);
-        navigate("/home");
-        console.log("Login successful:", response.data);
+      if (response.data) {
+        // setAuthSession(response.data.token);
+        console.log("Registration successful:", response.data);
+        navigate("/login");
       }
     },
     onError: (error: any) => {
       alert(
-        "Login failed: " + (error.response?.data?.message || error.message)
+        "Registration failed: " +
+          (error.response?.data?.message || error.message)
       );
     },
   });
@@ -52,10 +40,6 @@ const LoginComponent: React.FC = () => {
   const handleSubmit = (values: FormValues) => {
     console.log(values);
     mutation.mutate(values);
-  };
-
-  const handleRegister = () => {
-    navigate("/register");
   };
 
   return (
@@ -73,10 +57,10 @@ const LoginComponent: React.FC = () => {
               align="center"
               style={{ marginBottom: "1.5rem" }}
             >
-              Login
+              Register
             </Typography>
 
-            <Formik
+            <Formik<FormValues>
               initialValues={initialValues}
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
@@ -136,18 +120,6 @@ const LoginComponent: React.FC = () => {
                         marginTop: "1.5rem",
                       }}
                     >
-                      Log In
-                    </Button>
-                    <p style={{ textAlign: "center" }}>OR</p>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      type="submit"
-                      style={{
-                        backgroundColor: "#fccc55",
-                      }}
-                      onClick={handleRegister}
-                    >
                       Register
                     </Button>
                   </div>
@@ -160,5 +132,4 @@ const LoginComponent: React.FC = () => {
     </>
   );
 };
-
-export default LoginComponent;
+export default RegisterPage;
