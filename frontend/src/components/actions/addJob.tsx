@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { Button, Drawer, TextField } from "@mui/material";
+import { formData } from "../pages/homePage";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addJob } from "../../services/fetchData";
 
-interface AddJobProps {
-  setLocalData: React.Dispatch<React.SetStateAction<any[]>>;
-}
-
-const AddJob: React.FC<AddJobProps> = ({ setLocalData }) => {
+const AddJob: React.FC = () => {
   const [state, setState] = useState(false);
-  const [formData, setFormData] = useState({
-    id: "",
+  const [formData, setFormData] = useState<formData>({
     title: "",
     requestedBy: "",
     positions: "",
@@ -18,34 +16,18 @@ const AddJob: React.FC<AddJobProps> = ({ setLocalData }) => {
     setState(open);
   };
 
-  const handleSubmit = () => {
-    if (
-      formData.title &&
-      formData.requestedBy &&
-      formData.positions &&
-      formData.status
-    ) {
-      setLocalData((prevData) => [
-        ...prevData,
-        {
-          id: Date.now().toString(),
-          title: formData.title,
-          requestedBy: formData.requestedBy,
-          positions: formData.positions,
-          status: formData.status,
-        },
-      ]);
-      setFormData({
-        id: "",
-        title: "",
-        requestedBy: "",
-        positions: "",
-        status: "",
-      });
-      setState(false);
-    } else {
-      alert("All fields are required!");
-    }
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: addJob,
+    onSuccess: (response) => {
+      alert("Job added successfully");
+      toggleDrawer(false);
+      queryClient.invalidateQueries({ queryKey: ["getJobs"] });
+    },
+  });
+  const handleSubmit = async () => {
+    const token = localStorage.getItem("authToken") || "";
+    if (formData) mutation.mutate({ token, formData });
   };
   const list = () => (
     <div

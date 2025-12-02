@@ -1,37 +1,40 @@
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Box, Button, CircularProgress, TextField } from "@mui/material";
 import { getAuthSession } from "../../utils/auth";
-import { useMutation } from "@tanstack/react-query";
-import getInfo from "../../services/fetchData";
+import { useQuery } from "@tanstack/react-query";
+import { getJobs } from "../../services/fetchData";
 import { useEffect, useMemo, useState } from "react";
 import AddJob from "../actions/addJob";
 import EditJob from "../actions/editJob";
 import DeleteJob from "../actions/deleteJob";
 import { useNavigate } from "react-router-dom";
 
+export interface formData {
+  _id?: string;
+  title: string;
+  requestedBy: string;
+  positions: string;
+  status: string;
+}
 const HomeComponent: React.FC = () => {
-  const [localData, setLocalData] = useState<any[]>([]);
+  const [localData, setLocalData] = useState<formData[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const token = useMemo(() => getAuthSession(), []);
   console.log("localData: ", localData);
-  const mutation = useMutation({
-    mutationKey: ["fetchData"],
-    mutationFn: getInfo,
-    onSuccess: (response) => {
-      if (response.data) {
-        setLocalData(response.data.jobs);
-      }
-    },
-    onError: (error: any) => {
-      alert(
-        "Login failed: " + (error.response?.data?.message || error.message)
-      );
-    },
+  const getJobsQuery = useQuery({
+    queryKey: ["getJobs"],
+    queryFn: () => getJobs(token!),
+    staleTime: Infinity,
   });
 
   useEffect(() => {
-    mutation.mutate(token);
-  }, [token]);
+    if (getJobsQuery.isError) {
+      alert("Error fetching jobs: " + (getJobsQuery.error as any).message);
+    }
+    if (getJobsQuery.data?.data) {
+      setLocalData(getJobsQuery.data.data.jobs);
+    }
+  }, [getJobsQuery]);
 
   const handleSearchQuery = (event) => {
     setSearchQuery(event.target.value);
@@ -72,7 +75,7 @@ const HomeComponent: React.FC = () => {
   ];
 
   const rows = localData.map((item) => ({
-    id: item._id || item.id,
+    id: item._id,
     title: item.title,
     requestedBy: item.requestedBy,
     positions: item.positions,
@@ -87,7 +90,7 @@ const HomeComponent: React.FC = () => {
         item.status.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .map((item) => ({
-      id: item._id || item.id,
+      id: item._id,
       title: item.title,
       requestedBy: item.requestedBy,
       positions: item.positions,
@@ -105,8 +108,10 @@ const HomeComponent: React.FC = () => {
     <>
       {token && (
         <Box sx={{ mt: 4 }}>
-          <div style={{ textAlign: "right" }}>
-            <Button onClick={handleLogout}>Logout</Button>
+          <div style={{ textAlign: "right", marginRight: "1rem" }}>
+            <Button variant="contained" color="error" onClick={handleLogout}>
+              Logout
+            </Button>
           </div>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <TextField
@@ -116,9 +121,9 @@ const HomeComponent: React.FC = () => {
               value={searchQuery}
               onChange={handleSearchQuery}
             ></TextField>
-            <AddJob setLocalData={setLocalData} />
+            <AddJob />
           </Box>
-          {mutation.isPending ? (
+          {getJobsQuery.isLoading ? (
             <Box
               sx={{
                 display: "flex",

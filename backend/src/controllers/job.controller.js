@@ -34,4 +34,26 @@ const getJobs = async (_req, res) => {
   }
 };
 
-export { addJob, getJobs };
+const editJob = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    const job = await Job.findById(_id);
+    if (!job) {
+      return res.status(404).json({ message: `Job Not Found` });
+    }
+    const updatedJob = await Job.findByIdAndUpdate(_id, req.body, {
+      new: true,
+    });
+    return res.status(200).json({
+      message: "Job updated successfully",
+      job: updatedJob,
+    });
+  } catch (error) {
+    console.log("Error while editing job:", error.message);
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
+
+export { addJob, getJobs, editJob };
