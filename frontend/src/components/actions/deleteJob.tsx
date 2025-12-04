@@ -1,13 +1,37 @@
 import { IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useMutation } from "@tanstack/react-query";
+import { deleteJob } from "../../services/apiHelper";
+import { useSnackbar } from "notistack";
 interface DeleteJobProps {
   id: string;
-  setLocalData: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-const DeleteJob: React.FC<DeleteJobProps> = ({ id, setLocalData }) => {
+const DeleteJob: React.FC<DeleteJobProps> = ({ id }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const mutation = useMutation({
+    mutationFn: deleteJob,
+    onSuccess: () => {
+      enqueueSnackbar("Job deleted successfully", {
+        variant: "success",
+        autoHideDuration: 3000,
+      });
+    },
+    onError: (error: any) => {
+      console.log(
+        "Deletion failed: " + (error.response?.data?.message || error.message)
+      );
+      enqueueSnackbar(
+        "Deletion failed: " + (error.response?.data?.message || error.message),
+        {
+          variant: "error",
+          autoHideDuration: 3000,
+        }
+      );
+    },
+  });
   const handleClick = () => {
-    setLocalData((prevData) => prevData.filter((item) => item.id !== id));
+    mutation.mutate({ id });
   };
   return (
     <>

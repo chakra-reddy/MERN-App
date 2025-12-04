@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Button, Drawer, TextField } from "@mui/material";
 import { formData } from "../pages/homePage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addJob } from "../../services/fetchData";
+import { createJob } from "../../services/apiHelper";
+import { useSnackbar } from "notistack";
 
 const AddJob: React.FC = () => {
   const [state, setState] = useState(false);
@@ -16,18 +17,34 @@ const AddJob: React.FC = () => {
     setState(open);
   };
 
+  const { enqueueSnackbar } = useSnackbar();
+
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: addJob,
-    onSuccess: (response) => {
-      alert("Job added successfully");
+    mutationFn: createJob,
+    onSuccess: () => {
+      enqueueSnackbar("Job created successfully", {
+        variant: "success",
+        autoHideDuration: 3000,
+      });
       toggleDrawer(false);
       queryClient.invalidateQueries({ queryKey: ["getJobs"] });
     },
+    onError: (error: any) => {
+      console.log(
+        "Creation failed: " + (error.response?.data?.message || error.message)
+      );
+      enqueueSnackbar(
+        "Creation failed: " + (error.response?.data?.message || error.message),
+        {
+          variant: "error",
+          autoHideDuration: 3000,
+        }
+      );
+    },
   });
   const handleSubmit = async () => {
-    const token = localStorage.getItem("authToken") || "";
-    if (formData) mutation.mutate({ token, formData });
+    if (formData) mutation.mutate({ formData });
   };
   const list = () => (
     <div

@@ -2,12 +2,14 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Box, Button, CircularProgress, TextField } from "@mui/material";
 import { getAuthSession } from "../../utils/auth";
 import { useQuery } from "@tanstack/react-query";
-import { getJobs } from "../../services/fetchData";
+import { getJobs } from "../../services/apiHelper";
 import { useEffect, useMemo, useState } from "react";
 import AddJob from "../actions/addJob";
 import EditJob from "../actions/editJob";
 import DeleteJob from "../actions/deleteJob";
 import { useNavigate } from "react-router-dom";
+import useDebounce from "../../hooks/useDebounce";
+import { useSnackbar } from "notistack";
 
 export interface formData {
   _id?: string;
@@ -20,82 +22,102 @@ const HomeComponent: React.FC = () => {
   const [localData, setLocalData] = useState<formData[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const token = useMemo(() => getAuthSession(), []);
-  console.log("localData: ", localData);
+  const { enqueueSnackbar } = useSnackbar();
   const getJobsQuery = useQuery({
     queryKey: ["getJobs"],
-    queryFn: () => getJobs(token!),
+    queryFn: () => getJobs(),
     staleTime: Infinity,
   });
 
   useEffect(() => {
     if (getJobsQuery.isError) {
-      alert("Error fetching jobs: " + (getJobsQuery.error as any).message);
+      enqueueSnackbar(
+        "Error fetching jobs: " +
+          (getJobsQuery.error as any).response?.data?.message ||
+          (getJobsQuery.error as any).message,
+        {
+          variant: "error",
+          autoHideDuration: 3000,
+        }
+      );
     }
     if (getJobsQuery.data?.data) {
       setLocalData(getJobsQuery.data.data.jobs);
     }
-  }, [getJobsQuery]);
+  }, [
+    getJobsQuery.data,
+    getJobsQuery.isError,
+    getJobsQuery.error,
+    enqueueSnackbar,
+  ]);
 
-  const handleSearchQuery = (event) => {
+  const handleSearchQuery = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
 
-  const columns: GridColDef[] = [
-    {
-      field: "title",
-      headerName: "Title",
-      width: 450,
-    },
-    {
-      field: "requestedBy",
-      headerName: "Requested By",
-      width: 350,
-    },
-    {
-      field: "positions",
-      headerName: "Positions",
-      width: 350,
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      width: 350,
-    },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 250,
-      renderCell: (params) => (
-        <div>
-          <EditJob job={params.row} setLocalData={setLocalData} />
-          <DeleteJob setLocalData={setLocalData} id={params.row.id} />
-        </div>
-      ),
-    },
-  ];
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: "title",
+        headerName: "Title",
+        width: 450,
+      },
+      {
+        field: "requestedBy",
+        headerName: "Requested By",
+        width: 350,
+      },
+      {
+        field: "positions",
+        headerName: "Positions",
+        width: 350,
+      },
+      {
+        field: "status",
+        headerName: "Status",
+        width: 350,
+      },
+      {
+        field: "action",
+        headerName: "Action",
+        width: 250,
+        renderCell: (params) => (
+          <div>
+            <EditJob job={params.row} />
+            <DeleteJob id={params.row.id} />
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
-  const rows = localData.map((item) => ({
-    id: item._id,
-    title: item.title,
-    requestedBy: item.requestedBy,
-    positions: item.positions,
-    status: item.status,
-  }));
+  const rows = useMemo(
+    () =>
+      localData.map((item) => ({
+        id: item._id,
+        title: item.title,
+        requestedBy: item.requestedBy,
+        positions: item.positions,
+        status: item.status,
+        _search: (
+          item.title +
+          " " +
+          item.requestedBy +
+          " " +
+          item.status
+        ).toLowerCase(),
+      })),
+    [localData]
+  );
   console.log("rows: ", rows);
-  const filteredRows = localData
-    .filter(
-      (item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.requestedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.status.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .map((item) => ({
-      id: item._id,
-      title: item.title,
-      requestedBy: item.requestedBy,
-      positions: item.positions,
-      status: item.status,
-    }));
+  const debouncedSearchQuery: string = useDebounce(searchQuery, 300);
+
+  const filterRows = useMemo((): formData[] => {
+    if (!debouncedSearchQuery) return rows;
+    const query = debouncedSearchQuery.toLowerCase();
+    return rows.filter((row) => row._search.includes(query));
+  }, [debouncedSearchQuery, rows]);
 
   const paginationModel = { page: 0, pageSize: 25 };
 
@@ -137,7 +159,7 @@ const HomeComponent: React.FC = () => {
           ) : (
             <Box>
               <DataGrid
-                rows={searchQuery ? filteredRows : rows}
+                rows={searchQuery ? filterRows : rows}
                 columns={columns}
                 initialState={{ pagination: { paginationModel } }}
                 pageSizeOptions={[25]}

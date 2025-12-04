@@ -35,14 +35,15 @@ const getJobs = async (_req, res) => {
 };
 
 const editJob = async (req, res) => {
-  const { _id } = req.body;
+  const { id } = req.params;
   try {
-    const job = await Job.findById(_id);
+    const job = await Job.findById(id);
     if (!job) {
       return res.status(404).json({ message: `Job Not Found` });
     }
-    const updatedJob = await Job.findByIdAndUpdate(_id, req.body, {
+    const updatedJob = await Job.findByIdAndUpdate(id, req.body, {
       new: true,
+      runValidators: true,
     });
     return res.status(200).json({
       message: "Job updated successfully",
@@ -56,4 +57,21 @@ const editJob = async (req, res) => {
   }
 };
 
-export { addJob, getJobs, editJob };
+const deleteJob = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const job = await Job.findById(id);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+    await Job.findByIdAndDelete(id);
+    return res.status(200).json({ message: "Job deleted successfully" });
+  } catch (error) {
+    console.log("Error while deleting job:", error.message);
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
+
+export { addJob, getJobs, editJob, deleteJob };

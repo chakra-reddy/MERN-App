@@ -1,36 +1,69 @@
 import React, { useState } from "react";
 import { Button, Drawer, TextField, IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { updateJob } from "../../services/apiHelper";
+import { useSnackbar } from "notistack";
 
 interface EditJobProps {
-  job: any;
-  setLocalData: React.Dispatch<React.SetStateAction<any[]>>;
+  job: {
+    id: string;
+    title: string;
+    requestedBy: string;
+    positions: string;
+    status: string;
+  };
 }
-const EditJob: React.FC<EditJobProps> = ({ job, setLocalData }) => {
+const EditJob: React.FC<EditJobProps> = ({ job }) => {
   const [state, setState] = useState(false);
   const [formData, setFormData] = useState({
     title: job.title,
-    createdBy: { displayName: job.requestedBy },
-    numberOfPositions: job.positions,
+    requestedBy: job.requestedBy,
+    positions: job.positions,
     status: job.status,
+  });
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: updateJob,
+    onSuccess: () => {
+      enqueueSnackbar("Job updated successfully", {
+        variant: "success",
+        autoHideDuration: 3000,
+      });
+      toggleDrawer(false);
+      queryClient.invalidateQueries({ queryKey: ["getJobs"] });
+    },
+    onError: (error: any) => {
+      console.log(
+        "Update failed: " + (error.response?.data?.message || error.message)
+      );
+      enqueueSnackbar(
+        "Update failed: " + (error.response?.data?.message || error.message),
+        {
+          variant: "error",
+          autoHideDuration: 3000,
+        }
+      );
+    },
   });
 
   const toggleDrawer = (open: boolean) => {
     setState(open);
   };
-
+  console.log("Editing job: ", job);
   const handleSubmit = () => {
-    if (
-      formData.title &&
-      formData.createdBy.displayName &&
-      formData.numberOfPositions &&
-      formData.status
-    ) {
-      setLocalData((prevData) =>
-        prevData.map((item) =>
-          item.id === job.id ? { ...item, ...formData } : item
-        )
-      );
+    const { title, requestedBy, positions, status } = formData;
+    if (title && requestedBy && positions && status) {
+      mutation.mutate({
+        job: {
+          _id: job.id,
+          title: title,
+          requestedBy: requestedBy,
+          positions: positions,
+          status: status,
+        },
+      });
       setState(false);
     }
   };
@@ -45,20 +78,20 @@ const EditJob: React.FC<EditJobProps> = ({ job, setLocalData }) => {
       />
       <TextField
         placeholder="Requested By"
-        value={formData.createdBy.displayName}
+        value={formData.requestedBy}
         onChange={(e) =>
           setFormData({
             ...formData,
-            createdBy: { ...formData.createdBy, displayName: e.target.value },
+            requestedBy: e.target.value,
           })
         }
         sx={{ m: 2, width: "350px" }}
       />
       <TextField
         placeholder="Positions"
-        value={formData.numberOfPositions}
+        value={formData.positions}
         onChange={(e) =>
-          setFormData({ ...formData, numberOfPositions: e.target.value })
+          setFormData({ ...formData, positions: e.target.value })
         }
         sx={{ m: 2, width: "350px" }}
       />
