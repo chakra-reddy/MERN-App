@@ -24,8 +24,6 @@ const RegisterPage: React.FC = () => {
     mutationFn: registerUser,
     onSuccess: (response) => {
       if (response.data) {
-        // setAuthSession(response.data.token);
-        console.log("Registration successful:", response.data);
         navigate("/login");
       }
     },
@@ -38,7 +36,6 @@ const RegisterPage: React.FC = () => {
   });
 
   const handleSubmit = (values: FormValues) => {
-    console.log(values);
     mutation.mutate(values);
   };
 

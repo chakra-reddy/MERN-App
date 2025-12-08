@@ -44,10 +44,22 @@ const AddJob: React.FC = () => {
     },
   });
   const handleSubmit = async () => {
-    if (formData) mutation.mutate({ formData });
+    const { title, requestedBy, positions, status } = formData;
+    if (title && requestedBy && positions && status)
+      mutation.mutate({ formData });
+    setFormData({
+      title: "",
+      requestedBy: "",
+      positions: "",
+      status: "",
+    });
   };
   const list = () => (
-    <div
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -91,27 +103,29 @@ const AddJob: React.FC = () => {
         sx={{ m: 2, width: "350px" }}
       ></TextField>
       <Button
+        type="submit"
         variant="contained"
         sx={{
           m: 2,
           width: "350px",
           backgroundColor: "#fccc55",
         }}
-        onClick={handleSubmit}
       >
         Submit
       </Button>
-    </div>
+    </form>
   );
   return (
     <div>
       <Button
+        type="button"
         variant="contained"
         sx={{
           backgroundColor: "#fccc55",
           margin: "1rem",
         }}
         onClick={() => toggleDrawer(true)}
+        disabled={state}
       >
         +Add Job
       </Button>

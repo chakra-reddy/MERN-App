@@ -51,7 +51,6 @@ const EditJob: React.FC<EditJobProps> = ({ job }) => {
   const toggleDrawer = (open: boolean) => {
     setState(open);
   };
-  console.log("Editing job: ", job);
   const handleSubmit = () => {
     const { title, requestedBy, positions, status } = formData;
     if (title && requestedBy && positions && status) {

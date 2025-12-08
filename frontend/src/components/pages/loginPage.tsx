@@ -39,7 +39,6 @@ const LoginComponent: React.FC = () => {
       if (response.data.token) {
         setAuthSession(response.data.token);
         navigate("/home");
-        console.log("Login successful:", response.data);
       }
     },
     onError: (error: any) => {
@@ -50,7 +49,6 @@ const LoginComponent: React.FC = () => {
   });
 
   const handleSubmit = (values: FormValues) => {
-    console.log(values);
     mutation.mutate(values);
   };
 

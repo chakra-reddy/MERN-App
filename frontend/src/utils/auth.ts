@@ -5,3 +5,7 @@ export const setAuthSession = (token: string) => {
 export const getAuthSession = () => {
   return localStorage.getItem("authToken");
 };
+
+export const clearAuthSession = () => {
+  localStorage.removeItem("authToken");
+};

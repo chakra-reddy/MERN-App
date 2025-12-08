@@ -1,6 +1,6 @@
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Box, Button, CircularProgress, TextField } from "@mui/material";
-import { getAuthSession } from "../../utils/auth";
+import { clearAuthSession, getAuthSession } from "../../utils/auth";
 import { useQuery } from "@tanstack/react-query";
 import { getJobs } from "../../services/apiHelper";
 import { useEffect, useMemo, useState } from "react";
@@ -24,7 +24,7 @@ const HomeComponent: React.FC = () => {
   const token = useMemo(() => getAuthSession(), []);
   const { enqueueSnackbar } = useSnackbar();
   const getJobsQuery = useQuery({
-    queryKey: ["getJobs"],
+    queryKey: ["getJobs", token],
     queryFn: () => getJobs(),
     staleTime: Infinity,
   });
@@ -110,7 +110,6 @@ const HomeComponent: React.FC = () => {
       })),
     [localData]
   );
-  console.log("rows: ", rows);
   const debouncedSearchQuery: string = useDebounce(searchQuery, 300);
 
   const filterRows = useMemo((): formData[] => {
@@ -123,7 +122,7 @@ const HomeComponent: React.FC = () => {
 
   const navigate = useNavigate();
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
+    clearAuthSession();
     navigate("/login");
   };
   return (

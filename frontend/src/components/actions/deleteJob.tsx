@@ -1,6 +1,6 @@
 import { IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteJob } from "../../services/apiHelper";
 import { useSnackbar } from "notistack";
 interface DeleteJobProps {
@@ -9,6 +9,7 @@ interface DeleteJobProps {
 
 const DeleteJob: React.FC<DeleteJobProps> = ({ id }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: deleteJob,
     onSuccess: () => {
@@ -16,6 +17,7 @@ const DeleteJob: React.FC<DeleteJobProps> = ({ id }) => {
         variant: "success",
         autoHideDuration: 3000,
       });
+      queryClient.invalidateQueries({ queryKey: ["getJobs"] });
     },
     onError: (error: any) => {
       console.log(

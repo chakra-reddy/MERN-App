@@ -1,7 +1,8 @@
 import { formData } from "../components/pages/homePage";
 import axios from "axios";
+import { getAuthSession } from "../utils/auth";
 
-const token = localStorage.getItem("authToken") || "";
+const token = getAuthSession();
 const getJobs = async () => {
   const response = await axios.get("http://localhost:8080/api/jobs", {
     headers: {
