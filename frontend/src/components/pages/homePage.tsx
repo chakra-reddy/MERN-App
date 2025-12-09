@@ -27,6 +27,7 @@ const HomeComponent: React.FC = () => {
     queryKey: ["getJobs", token],
     queryFn: () => getJobs(),
     staleTime: Infinity,
+    enabled: !!token,
   });
 
   useEffect(() => {
